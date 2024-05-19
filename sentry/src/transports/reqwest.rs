@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use reqwest::{header as ReqwestHeaders, Client as ReqwestClient, Proxy, StatusCode};
+use reqwest::{header as ReqwestHeaders, Client as ReqwestClient, StatusCode};
+#[cfg(not(target_arch = "wasm32"))]
+use reqwest::Proxy;
 
 use super::tokio_thread::TransportThread;
 
@@ -30,9 +32,11 @@ impl ReqwestHttpTransport {
     fn new_internal(options: &ClientOptions, client: Option<ReqwestClient>) -> Self {
         let client = client.unwrap_or_else(|| {
             let mut builder = reqwest::Client::builder();
+            #[cfg(not(target_arch = "wasm32"))]
             if options.accept_invalid_certs {
                 builder = builder.danger_accept_invalid_certs(true);
             }
+            #[cfg(not(target_arch = "wasm32"))]
             if let Some(url) = options.http_proxy.as_ref() {
                 match Proxy::http(url.as_ref()) {
                     Ok(proxy) => {
@@ -43,6 +47,7 @@ impl ReqwestHttpTransport {
                     }
                 }
             };
+            #[cfg(not(target_arch = "wasm32"))]
             if let Some(url) = options.https_proxy.as_ref() {
                 match Proxy::https(url.as_ref()) {
                     Ok(proxy) => {
